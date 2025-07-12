@@ -1,0 +1,3 @@
+[submodule "proactive_sensor_gateway"]
+	path = proactive_sensor_gateway
+	url = https://github.com/DiracSolutions/proactive_sensor_gateway.git
