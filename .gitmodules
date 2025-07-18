@@ -1,3 +1,9 @@
 [submodule "proactive_sensor_gateway"]
 	path = proactive_sensor_gateway
 	url = https://github.com/DiracSolutions/proactive_sensor_gateway.git
+[submodule "rfid_inventory"]
+	path = rfid_inventory
+	url = https://github.com/DiracSolutions/rfid_inventory.git
+[submodule "rfid_viz"]
+	path = rfid_viz
+	url = https://github.com/DiracSolutions/rfid_viz.git
