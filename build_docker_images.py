@@ -14,6 +14,13 @@ def load_json_file(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
+SUPPORTED_PLATFORMS = [
+    "linux/amd64",
+    "linux/arm64",
+    "linux/arm/v7",
+    "linux/arm/v6",
+]
+
 # Define the services and their Dockerfile paths
 services = {
     "rfid_database": "rfid_inventory/services",
@@ -27,15 +34,12 @@ services = {
     "viz_server": "rfid_viz/services"
 }
 
-# Services that are pulled from Docker Hub
 remote_services = {
-    "postgres": "postgres:latest",
+    # "postgres": "postgres:latest",
 }
 
 def create_local_docker_registry(ip, port):
-    # remove old registry container if it exists
-    result = subprocess.run("docker rm -f registry", shell=True, stdout=subprocess.PIPE)
-    # create the registry on the specified port
+    subprocess.run("docker rm -f registry", shell=True, stdout=subprocess.PIPE)
     print("Creating and starting registry container...")
     run(f"docker run -d -p {ip}:{port}:5000 --restart=always --name registry -e REGISTRY_STORAGE_DELETE_ENABLED=true registry:2")
 
@@ -49,15 +53,29 @@ def docker_login(credentials):
     if process.returncode != 0:
         raise RuntimeError("Docker login failed.")
 
-def build_and_push(service, dockerfile_dir, registry_url):
+def build_and_push(service, dockerfile_dir, registry_url, target_platform=None):
     image_name = f"{registry_url}/{service}"
     dockerfile_path = f"{dockerfile_dir}/{service}/Dockerfile"
-    print(f"Building {service} from {dockerfile_path}")
-    run(f"docker build -t {service} -f {dockerfile_path} .")
-    print(f"Tagging image as {image_name}")
-    run(f"docker tag {service} {image_name}")
-    print(f"Pushing {image_name}")
-    run(f"docker push {image_name}")
+
+    if target_platform:
+        print(f"📦 Cross-building {service} for {target_platform} from {dockerfile_path}")
+        build_cmd = (
+            f"docker buildx build "
+            f"--platform {target_platform} "
+            f"-t {image_name} "
+            f"-f {dockerfile_path} . "
+            f"--push"
+        )
+    else:
+        print(f"📦 Building {service} natively from {dockerfile_path}")
+        build_cmd = (
+            f"docker build "
+            f"-t {image_name} "
+            f"-f {dockerfile_path} ."
+        )
+        run(f"docker push {image_name}")
+
+    run(build_cmd)
 
 def pull_and_push_image(image_name, target_name, registry_url):
     full_target = f"{registry_url}/{target_name}"
@@ -70,7 +88,22 @@ def pull_and_push_image(image_name, target_name, registry_url):
 
 if __name__ == "__main__":
 
-    import time
+    def get_platform_from_args():
+        if "--target" in os.sys.argv:
+            platform_index = os.sys.argv.index("--target")
+            if len(os.sys.argv) <= platform_index + 1:
+                print("Error: --platform flag must be followed by a value.")
+                exit(1)
+            platform_value = os.sys.argv[platform_index + 1]
+            if platform_value not in SUPPORTED_PLATFORMS:
+                print(f"Error: Unsupported platform '{platform_value}'")
+                print(f"   Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}")
+                exit(1)
+            return platform_value
+        else:
+            return None  # No platform specified — local native build
+
+    target_platform = get_platform_from_args()
 
     if any(arg.startswith("--") for arg in os.sys.argv):
         flagged_services = {
@@ -82,19 +115,16 @@ if __name__ == "__main__":
             remote_service: image_name for remote_service, image_name in remote_services.items()
             if f"--{remote_service}" in os.sys.argv
         }
- 
+
         if flagged_services or flagged_remote_services:
             services = flagged_services
-            remote_services = flagged_remote_services 
+            remote_services = flagged_remote_services
             print(f"Building only the specified services: {list(remote_services.keys()) + list(services.keys())}")
 
     time.sleep(1)
 
-    # check for --local flag
-    registry_url = None    
+    registry_url = None
     if "--local" in os.sys.argv:
-        # Ip and Port are passed in as arguments when the --local flag is used
-        # get the index of the --local flag
         local_index = os.sys.argv.index("--local")
         if len(os.sys.argv) < local_index + 3:
             print("Usage: build_docker_images.py --local <ip> <port> [--create-registry]")
@@ -108,12 +138,13 @@ if __name__ == "__main__":
         credentials = load_json_file("acr_credentials.json")
         registry_url = credentials["Ip"]
         docker_login(credentials)
-    
+
     for service, dockerfile_dir in services.items():
-        build_and_push(service, dockerfile_dir, registry_url)
+        build_and_push(service, dockerfile_dir, registry_url, target_platform)
 
     for remote_service, image_name in remote_services.items():
         target_name = remote_service.replace("_", "-")
         pull_and_push_image(remote_service, image_name, registry_url)
 
-    print(f"All images built and pushed to Docker registry at {registry_url}")
+    print(f"✅ All images built and pushed to Docker registry at {registry_url}")
+
