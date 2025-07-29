@@ -18,9 +18,9 @@ def load_json_file(filepath: str):
 services = {
     "rfid_database": "rfid_inventory/services",
     "item_tracker": "rfid_inventory/services",
-    "rfid_inventory": "rfid_inventory/services",
     "portal_processor": "rfid_inventory/services",
     "tag_measurement_database": "rfid_inventory/services",
+    "tag_measurement_aggregator": "rfid_inventory/services",
     "impinj_reader": "rfid_inventory/services",
     "gateway_reader": "proactive_sensor_gateway/services",
     "sensor_data_storage": "proactive_sensor_gateway/services",
