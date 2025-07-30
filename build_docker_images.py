@@ -66,6 +66,7 @@ def build_and_push(service, dockerfile_dir, registry_url, target_platform=None):
             f"-f {dockerfile_path} . "
             f"--push"
         )
+        run(build_cmd)
     else:
         print(f"📦 Building {service} natively from {dockerfile_path}")
         build_cmd = (
@@ -73,9 +74,8 @@ def build_and_push(service, dockerfile_dir, registry_url, target_platform=None):
             f"-t {image_name} "
             f"-f {dockerfile_path} ."
         )
+        run(build_cmd)
         run(f"docker push {image_name}")
-
-    run(build_cmd)
 
 def pull_and_push_image(image_name, target_name, registry_url):
     full_target = f"{registry_url}/{target_name}"
