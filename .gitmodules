@@ -13,3 +13,6 @@
 [submodule "proactive_sensor_node"]
 	path = proactive_sensor_node
 	url = https://github.com/DiracSolutions/proactive_sensor_node.git
+[submodule "docker_build_utils"]
+	path = docker_build_utils
+	url = https://github.com/DiracSolutions/docker_build_utils.git
