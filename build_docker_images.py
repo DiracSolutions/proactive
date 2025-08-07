@@ -1,5 +1,5 @@
 import sys
-from docker_build_utils.docker_builder import DockerBuilder
+from docker_utils.docker_image_utils import DockerImageBuilder
 
 project_prefix = "proactive"
 
@@ -25,7 +25,7 @@ build_args = {
 if __name__ == "__main__":
     import sys
 
-    builder = DockerBuilder(
+    builder = DockerImageBuilder(
         project_prefix=project_prefix,
         services=services,
         build_args=build_args,
