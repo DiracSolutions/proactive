@@ -7,9 +7,6 @@
 [submodule "rfid_viz"]
 	path = rfid_viz
 	url = https://github.com/DiracSolutions/rfid_viz.git
-[submodule "proactive_deploy"]
-	path = proactive_deploy
-	url = https://github.com/DiracSolutions/proactive_deploy.git
 [submodule "proactive_sensor_node"]
 	path = proactive_sensor_node
 	url = https://github.com/DiracSolutions/proactive_sensor_node.git
